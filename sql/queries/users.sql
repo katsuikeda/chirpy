@@ -4,3 +4,6 @@ INSERT INTO
 VALUES
     (gen_random_uuid (), NOW (), NOW (), $1)
 RETURNING *;
+
+-- name: DeleteAllUsers :exec
+DELETE FROM users;
