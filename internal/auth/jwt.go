@@ -12,6 +12,7 @@ import (
 )
 
 const issuer = "chirpy"
+const bearerScheme = "Bearer"
 
 // MakeJWT creates a JWT token for an authenticated user.
 // This should only be called after successful user authentication.
@@ -65,9 +66,7 @@ func ValidateJWT(tokenString, tokenSecret string) (uuid.UUID, error) {
 	return userID, nil
 }
 
-func GetBearerToken(headers http.Header) (string, error) {
-	const bearerScheme = "Bearer"
-
+func GetAccessToken(headers http.Header) (string, error) {
 	authHeaderVal := headers.Get("Authorization")
 	if authHeaderVal == "" {
 		return "", errors.New("authorization header is missing or empty")

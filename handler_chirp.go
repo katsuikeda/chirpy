@@ -25,9 +25,9 @@ func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request)
 		Body string `json:"body"`
 	}
 
-	tokenString, err := auth.GetBearerToken(r.Header)
+	tokenString, err := auth.GetAccessToken(r.Header)
 	if err != nil {
-		respondWithError(w, http.StatusUnauthorized, "Couldn't find JWT", err)
+		respondWithError(w, http.StatusUnauthorized, "Couldn't find JWT in request header", err)
 		return
 	}
 	userID, err := auth.ValidateJWT(tokenString, cfg.jwtSecret)
