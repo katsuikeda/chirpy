@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
+	"github.com/katsuikeda/chirpy/internal/auth"
 )
 
 func (cfg *apiConfig) HandlerUpgradeUserToChirpyRed(w http.ResponseWriter, r *http.Request) {
@@ -15,6 +16,16 @@ func (cfg *apiConfig) HandlerUpgradeUserToChirpyRed(w http.ResponseWriter, r *ht
 		Data  struct {
 			UserID uuid.UUID `json:"user_id"`
 		} `json:"data"`
+	}
+
+	apiKey, err := auth.GetAPIKey(r.Header)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Couldn't find api key", err)
+		return
+	}
+	if apiKey != cfg.polkaKey {
+		respondWithError(w, http.StatusUnauthorized, "Invalid API key", err)
+		return
 	}
 
 	decoder := json.NewDecoder(r.Body)
