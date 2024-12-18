@@ -22,3 +22,8 @@ RETURNING *;
 UPDATE users
 SET is_chirpy_red = TRUE
 WHERE id = $1;
+
+-- name: UserExists :one
+SELECT EXISTS(
+    SELECT 1 FROM users WHERE id = $1
+);

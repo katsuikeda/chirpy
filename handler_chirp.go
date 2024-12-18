@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -99,12 +100,50 @@ func getCleanedBody(body string, badWords map[string]struct{}) string {
 }
 
 func (cfg *apiConfig) handlerGetChirps(w http.ResponseWriter, r *http.Request) {
-	dbChirps, err := cfg.db.GetChirps(r.Context())
-	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Couldn't get chirps", err)
-		return
+	authorIDString := r.URL.Query().Get("author_id")
+	var dbChirps []database.Chirp
+	var err error
+
+	if authorIDString != "" {
+		authorID, err := uuid.Parse(authorIDString)
+		if err != nil {
+			respondWithError(w, http.StatusBadRequest, "Invalid author ID format", err)
+			return
+		}
+
+		userExists, err := cfg.db.UserExists(r.Context(), authorID)
+		if err != nil {
+			respondWithError(w, http.StatusInternalServerError, "Couldn't check if user exists", err)
+			return
+		}
+		if !userExists {
+			respondWithError(w, http.StatusNotFound, "User not found", nil)
+			return
+		}
+
+		dbChirps, err = cfg.db.GetChirpsByUserID(r.Context(), authorID)
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				// User exists but has no chirps
+				respondWithJSON(w, http.StatusOK, []Chirp{})
+				return
+			}
+			respondWithError(w, http.StatusInternalServerError, "Couldn't get chirps", err)
+			return
+		}
+	} else {
+		dbChirps, err = cfg.db.GetChirps(r.Context())
+		if err != nil {
+			respondWithError(w, http.StatusInternalServerError, "Couldn't get chirps", err)
+			return
+		}
 	}
 
+	chirps := populateChirps(dbChirps)
+	respondWithJSON(w, http.StatusOK, chirps)
+}
+
+func populateChirps(dbChirps []database.Chirp) []Chirp {
 	chirps := make([]Chirp, len(dbChirps))
 	for i, dbChirp := range dbChirps {
 		chirps[i] = Chirp{
@@ -115,8 +154,7 @@ func (cfg *apiConfig) handlerGetChirps(w http.ResponseWriter, r *http.Request) {
 			UserID:    dbChirp.UserID,
 		}
 	}
-
-	respondWithJSON(w, http.StatusOK, chirps)
+	return chirps
 }
 
 func (cfg *apiConfig) handlerGetChirpByID(w http.ResponseWriter, r *http.Request) {

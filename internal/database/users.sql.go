@@ -103,3 +103,16 @@ func (q *Queries) UpgradeUserToChirpyRed(ctx context.Context, id uuid.UUID) erro
 	_, err := q.db.ExecContext(ctx, upgradeUserToChirpyRed, id)
 	return err
 }
+
+const userExists = `-- name: UserExists :one
+SELECT EXISTS(
+    SELECT 1 FROM users WHERE id = $1
+)
+`
+
+func (q *Queries) UserExists(ctx context.Context, id uuid.UUID) (bool, error) {
+	row := q.db.QueryRowContext(ctx, userExists, id)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
