@@ -139,21 +139,41 @@ func (cfg *apiConfig) handlerGetChirps(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	chirps := populateChirps(dbChirps)
+	IsDescending := false
+	sortDirectionParam := r.URL.Query().Get("sort")
+	if sortDirectionParam == "desc" {
+		IsDescending = true
+	}
+
+	chirps := populateChirps(dbChirps, IsDescending)
 	respondWithJSON(w, http.StatusOK, chirps)
 }
 
-func populateChirps(dbChirps []database.Chirp) []Chirp {
+func populateChirps(dbChirps []database.Chirp, IsDescending bool) []Chirp {
 	chirps := make([]Chirp, len(dbChirps))
-	for i, dbChirp := range dbChirps {
-		chirps[i] = Chirp{
-			ID:        dbChirp.ID,
-			CreatedAt: dbChirp.CreatedAt,
-			UpdatedAt: dbChirp.UpdatedAt,
-			Body:      dbChirp.Body,
-			UserID:    dbChirp.UserID,
+
+	if IsDescending {
+		for i, dbChirp := range dbChirps {
+			chirps[(len(dbChirps)-1)-i] = Chirp{
+				ID:        dbChirp.ID,
+				CreatedAt: dbChirp.CreatedAt,
+				UpdatedAt: dbChirp.UpdatedAt,
+				Body:      dbChirp.Body,
+				UserID:    dbChirp.UserID,
+			}
+		}
+	} else {
+		for i, dbChirp := range dbChirps {
+			chirps[i] = Chirp{
+				ID:        dbChirp.ID,
+				CreatedAt: dbChirp.CreatedAt,
+				UpdatedAt: dbChirp.UpdatedAt,
+				Body:      dbChirp.Body,
+				UserID:    dbChirp.UserID,
+			}
 		}
 	}
+
 	return chirps
 }
 
